@@ -387,32 +387,97 @@ function group(array, keySelector, valueSelector) {
  */
 
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  selector: [],
+  hasElement: false,
+  hasId: false,
+  hasPseudoEl: false,
+  order: 0,
+
+  stringify() {
+    return this.selector.join('');
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  element(value) {
+    if (this.hasElement) this.throwError();
+    this.checkOrder(1);
+
+    const newObj = Object.create(this);
+    newObj.selector = [...this.selector, value];
+    newObj.hasElement = true;
+    newObj.order = 1;
+    return newObj;
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    if (this.hasId) this.throwError();
+    this.checkOrder(2);
+
+    const newObj = Object.create(this);
+    newObj.selector = [...this.selector, `#${value}`];
+    newObj.hasId = true;
+    newObj.order = 2;
+    return newObj;
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    this.checkOrder(3);
+
+    const newObj = Object.create(this);
+    newObj.selector = [...this.selector, `.${value}`];
+    newObj.order = 3;
+    return newObj;
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    this.checkOrder(4);
+
+    const newObj = Object.create(this);
+    newObj.selector = [...this.selector, `[${value}]`];
+    newObj.order = 4;
+    return newObj;
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    this.checkOrder(5);
+
+    const newObj = Object.create(this);
+    newObj.selector = [...this.selector, `:${value}`];
+    newObj.order = 5;
+    return newObj;
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    if (this.hasPseudoEl) this.throwError();
+    this.checkOrder(6);
+
+    const newObj = Object.create(this);
+    newObj.selector = [...this.selector, `::${value}`];
+    newObj.hasPseudoEl = true;
+    newObj.order = 6;
+    return newObj;
+  },
+
+  combine(selector1, combinator, selector2) {
+    const newObj = Object.create(this);
+    newObj.selector = [
+      ...selector1.selector,
+      ` ${combinator} `,
+      ...selector2.selector,
+    ];
+    return newObj;
+  },
+
+  throwError() {
+    throw new Error(
+      'Element, id and pseudo-element should not occur more then one time inside the selector'
+    );
+  },
+
+  checkOrder(order) {
+    if (order < this.order)
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
   },
 };
 
